@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
 import requests
+import threading
 from time import sleep
+from telegram.ext import ApplicationBuilder, CommandHandler
 
 VIB = 4
 
