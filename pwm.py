@@ -4,7 +4,7 @@ ledPin = 4
 try:
   GPIO.setmode(GPIO.BCM)
   GPIO.setup(ledPin,GPIO.OUT)
-  pwm-GPIO.PWM(ledPin,100)
+  pwm=GPIO.PWM(ledPin,100)
   pwm.start(0)
   while True:
     for duty in range (100):
@@ -14,5 +14,6 @@ try:
       if(duty>100) : duty = 0
 except KeyboardInterrupt:
   print("Complete")
+  pass
 finally:
   GPIO.cleanup()
