@@ -1,7 +1,7 @@
 
 import RPi.GPIO as GPIO
-from telegram.ext import ApplicationBuilder, CommandHandler
 import requests
+from telegram.ext import ApplicationBuilder, CommandHandler
 from time import sleep
 TOKEN = "8120771917:AAGBwURu68ZVwN8oczrReAizuPDE-VdQS14"
 CHAT_ID = "8411566618"
@@ -22,7 +22,8 @@ app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("on", led_on))
 app.add_handler(CommandHandler("off", led_off))
 app.run_polling()
-// --------------------------------------------
+
+
 def sendTelegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     data = {
