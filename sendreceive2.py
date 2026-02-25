@@ -29,7 +29,7 @@ def sendTelegram(text):
 def check_vibration():
     while True:
         if GPIO.input(VIB) == 1:
-            sendTelegram("?? Open the door")
+            sendTelegram("Open the door")
             sleep(5)   # ch?ng spam
         sleep(0.1)
 
@@ -42,11 +42,11 @@ async def handle_message(update, context):
 
     if text in ["on", "/on"]:
         GPIO.output(LED, 1)
-        await update.message.reply_text("?? LED ON")
+        await update.message.reply_text("LED ON")
 
     elif text in ["off", "/off"]:
         GPIO.output(LED, 0)
-        await update.message.reply_text("?? LED OFF")
+        await update.message.reply_text("LED OFF")
 
 # ====== MAIN ======
 def main():
