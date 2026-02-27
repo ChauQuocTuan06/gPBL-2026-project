@@ -105,11 +105,11 @@ async def handle_message(update,context):
         GPIO.output(LED2,0)
         await update.message.reply_text("LED OFF")
         
-    elif txt == "open":
+    elif text == "open":
         setAngle(90)
         await update.message.reply_text("THE DOOR IS OPENED")
         
-    elif txt == "close":
+    elif text == "close":
         setAngle(0)
         await update.message.reply_text("THE DOOR IS CLOSED")
     
