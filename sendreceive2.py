@@ -11,20 +11,34 @@ CHAT_ID = "8411566618"
 LED = 4
 LED2 = 22
 VIB = 27
-
+SERVO = 13
 GPIO.setmode(GPIO.BCM)
 
 GPIO.setup(LED, GPIO.OUT)
 GPIO.setup(LED2, GPIO.OUT)
 GPIO.setup(VIB, GPIO.IN)
-
+GPIO.setup(SERVO, GPIO.OUT)
 GPIO.output(LED,0)
 GPIO.output(LED2,0)
-
+pwm = GPIO.PWM(SERVO, 50)
+pwm.start(0)
 # Serial
-ser = serial.Serial('/dev/ttyACM0',9600,timeout=1)
-sleep(2)
-ser.reset_input_buffer()
+ser = None
+
+def connect_serial():
+    global ser
+    while True:
+        try:
+            ser = serial.Serial('/dev/serial/by-id/usb-Arduino_UNO_WiFi_R4_CMSIS-DAP_D885ACA775B4-if01', 9600, timeout=1)
+            sleep(3)   # Arduino c?n th?i gian reset
+            ser.reset_input_buffer()
+            print("Serial connected")
+            break
+        except Exception as e:
+            print("Waiting Arduino...", e)
+            sleep(2)
+
+connect_serial()
 
 def sendTelegram(text):
 
@@ -37,14 +51,21 @@ def sendTelegram(text):
 
     requests.post(url,data=data)
 
-
+def setAngle(angle):
+    duty = 2.5 + (angle / 180)*10
+    pwm.ChangeDutyCycle(duty)
+    sleep(0.5)
+    pwm.ChangeDutyCycle(0)
+    
 def check_serial():
+
+    global ser
 
     while True:
 
         try:
 
-            if ser.in_waiting > 0:
+            if ser and ser.is_open and ser.in_waiting > 0:
 
                 data = ser.readline().decode("utf-8").strip()
 
@@ -53,16 +74,23 @@ def check_serial():
                 if data == "Open the door":
 
                     GPIO.output(LED,1)
-
+                    setAngle(90)
                     sendTelegram("Door Opened")
 
                     sleep(3)
-
+                    setAngle(0)
                     GPIO.output(LED,0)
 
         except Exception as e:
 
             print("Serial error:",e)
+
+            try:
+                ser.close()
+            except:
+                pass
+
+            connect_serial()   # reconnect
 
         sleep(0.1)
 
@@ -112,5 +140,5 @@ try:
     main()
 
 except KeyboardInterrupt:
-
+    pwm.stop()
     GPIO.cleanup()
