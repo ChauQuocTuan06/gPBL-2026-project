@@ -3,62 +3,114 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters
 import requests
 from time import sleep
 import threading
+import serial
 
-# ====== TELEGRAM CONFIG ======
 TOKEN = "8120771917:AAGBwURu68ZVwN8oczrReAizuPDE-VdQS14"
 CHAT_ID = "8411566618"
 
-# ====== GPIO CONFIG ======
 LED = 4
+LED2 = 22
 VIB = 27
 
 GPIO.setmode(GPIO.BCM)
+
 GPIO.setup(LED, GPIO.OUT)
+GPIO.setup(LED2, GPIO.OUT)
 GPIO.setup(VIB, GPIO.IN)
 
-# ====== TELEGRAM MESSAGE SENDER ======
+GPIO.output(LED,0)
+GPIO.output(LED2,0)
+
+# Serial
+ser = serial.Serial('/dev/ttyACM0',9600,timeout=1)
+sleep(2)
+ser.reset_input_buffer()
+
 def sendTelegram(text):
+
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
     data = {
         "chat_id": CHAT_ID,
         "text": text
     }
-    requests.post(url, data=data)
 
-# ====== VIBRATION SENSOR THREAD ======
-def check_vibration():
+    requests.post(url,data=data)
+
+
+def check_serial():
+
     while True:
-        if GPIO.input(VIB) == 1:
-            sendTelegram("Open the door")
-            sleep(5)   # ch?ng spam
+
+        try:
+
+            if ser.in_waiting > 0:
+
+                data = ser.readline().decode("utf-8").strip()
+
+                print("Arduino:",data)
+
+                if data == "Open the door":
+
+                    GPIO.output(LED,1)
+
+                    sendTelegram("Door Opened")
+
+                    sleep(3)
+
+                    GPIO.output(LED,0)
+
+        except Exception as e:
+
+            print("Serial error:",e)
+
         sleep(0.1)
 
-# ====== HANDLE TELEGRAM MESSAGE ======
-async def handle_message(update, context):
-    if not update.message or not update.message.text:
-        return
 
-    text = update.message.text.lower().strip()
+async def handle_message(update,context):
 
-    if text in ["on", "/on"]:
-        GPIO.output(LED, 1)
+    text = update.message.text.lower()
+
+    if text == "on":
+
+        GPIO.output(LED2,1)
+
         await update.message.reply_text("LED ON")
 
-    elif text in ["off", "/off"]:
-        GPIO.output(LED, 0)
+    elif text == "off":
+
+        GPIO.output(LED2,0)
+
         await update.message.reply_text("LED OFF")
 
-# ====== MAIN ======
+def checkVibration():
+
+    while True:
+
+        if GPIO.input(VIB) == 1:
+
+            sendTelegram("Hello there")
+
+            sleep(5)
+
+        sleep(0.1)
+
 def main():
+
     app = ApplicationBuilder().token(TOKEN).build()
 
-    app.add_handler(MessageHandler(filters.TEXT, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT,handle_message))
 
-    # ch?y thread c?m bi?n
-    threading.Thread(target=check_vibration, daemon=True).start()
+    threading.Thread(target=check_serial,daemon=True).start()
+    threading.Thread(target=checkVibration, daemon=True).start()
+    print("Bot running...")
 
-    print("Bot is running...")
     app.run_polling()
 
-if __name__ == "__main__":
+
+try:
     main()
+
+except KeyboardInterrupt:
+
+    GPIO.cleanup()
