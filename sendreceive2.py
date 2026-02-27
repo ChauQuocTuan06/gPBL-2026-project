@@ -74,11 +74,9 @@ def check_serial():
                 if data == "Open the door":
 
                     GPIO.output(LED,1)
-                    setAngle(90)
-                    sendTelegram("Door Opened")
+                    sendTelegram("Password is correct!!! Do you want to open the door???")
 
                     sleep(3)
-                    setAngle(0)
                     GPIO.output(LED,0)
 
         except Exception as e:
@@ -100,17 +98,21 @@ async def handle_message(update,context):
     text = update.message.text.lower()
 
     if text == "on":
-
         GPIO.output(LED2,1)
-
         await update.message.reply_text("LED ON")
 
     elif text == "off":
-
         GPIO.output(LED2,0)
-
         await update.message.reply_text("LED OFF")
-
+        
+    elif txt == "open":
+        setAngle(90)
+        await update.message.reply_text("THE DOOR IS OPENED")
+        
+    elif txt == "close":
+        setAngle(0)
+        await update.message.reply_text("THE DOOR IS CLOSED")
+    
 def checkVibration():
 
     while True:
@@ -128,7 +130,6 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(MessageHandler(filters.TEXT,handle_message))
-
     threading.Thread(target=check_serial,daemon=True).start()
     threading.Thread(target=checkVibration, daemon=True).start()
     print("Bot running...")
