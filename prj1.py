@@ -9,7 +9,7 @@ import serial
 import cv2
 import numpy as np
 
-TOKEN = "YOUR_TOKEN_HERE"
+TOKEN = "8120771917:AAGBwURu68ZVwN8oczrReAizuPDE-VdQS14"
 CHAT_ID = "8411566618"
 
 LED = 4
@@ -35,9 +35,6 @@ picam2.configure(picam2.create_still_configuration())
 picam2.start()
 time.sleep(2)
 
-# Human detector
-hog = cv2.HOGDescriptor()
-hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
 # Serial
 ser = None
@@ -94,11 +91,30 @@ def check_serial():
                 if data == "Open the door":
                     GPIO.output(LED, 1)
 
-                    sendTelegram("Password correct")
+                    sendTelegram("Password correct!!! Do you want to open the door??")
 
                     sleep(3)
-
                     GPIO.output(LED, 0)
+                    
+                elif data == "Taking a photo":
+                    sendTelegram("Someone is standing at your door.")
+                
+                    try:
+                        image_path = "/home/team10/photo.jpg"
+                        picam2.capture_file(image_path)
+                
+                        url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
+                
+                        with open(image_path, "rb") as photo:
+                            requests.post(
+                                url,
+                                files={"photo": photo},
+                                data={"chat_id": CHAT_ID},
+                                timeout=10
+                            )
+                
+                    except Exception as e:
+                        sendTelegram(f"Camera error: {e}")
 
         except Exception as e:
 
@@ -121,58 +137,12 @@ def checkVibration():
 
         if GPIO.input(VIB) == 1:
 
-            sendTelegram("Vibration detected")
+            sendTelegram("Hello there")
 
             sleep(5)
 
         sleep(0.1)
 
-
-def checkPersonOnCamera():
-
-    while True:
-
-        try:
-
-            image_array = picam2.capture_array()
-
-            gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
-
-            gray = cv2.resize(gray, (320, 240))
-
-            boxes, weights = hog.detectMultiScale(
-                gray,
-                winStride=(8, 8),
-                padding=(4, 4),
-                scale=1.05
-            )
-
-            if len(boxes) > 0:
-
-                print("Person detected")
-
-                sendTelegram("Warning: Person detected")
-
-                image_path = "/home/team10/alert_photo.jpg"
-
-                picam2.capture_file(image_path)
-
-                url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
-
-                with open(image_path, "rb") as photo:
-                    requests.post(
-                        url,
-                        files={"photo": photo},
-                        data={"chat_id": CHAT_ID}
-                    )
-
-                sleep(30)
-
-        except Exception as e:
-
-            print("Camera error:", e)
-
-        sleep(1)
 
 
 async def handle_message(update, context):
@@ -205,7 +175,7 @@ async def handle_message(update, context):
 
     elif text == "take a photo":
 
-        await update.message.reply_text("Taking photo")
+        await update.message.reply_text("Taking a photo...")
 
         try:
 
@@ -230,7 +200,6 @@ def main():
 
     threading.Thread(target=check_serial, daemon=True).start()
     threading.Thread(target=checkVibration, daemon=True).start()
-    threading.Thread(target=checkPersonOnCamera, daemon=True).start()
 
     print("Bot is running")
 
