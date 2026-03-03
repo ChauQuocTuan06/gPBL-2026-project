@@ -91,10 +91,31 @@ def check_serial():
                 if data == "Open the door":
                     GPIO.output(LED, 1)
 
-                    sendTelegram("Password correct!!! Do you want to open the door??")
+                    sendTelegram("Password is correct!!! Do you want to open the door??")
 
                     sleep(3)
                     GPIO.output(LED, 0)
+                elif data == "Wrong password":
+                    sendTelegram("Password is uncorrect!!! Please do again!!!")
+
+                elif data == "Block":
+                    sendTelegram("BLOCKED SYSTEM FOR 10 MINUTES")
+                    try:
+                        image_path = "/home/team10/photo.jpg"
+                        picam2.capture_file(image_path)
+                
+                        url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
+                
+                        with open(image_path, "rb") as photo:
+                            requests.post(
+                                url,
+                                files={"photo": photo},
+                                data={"chat_id": CHAT_ID},
+                                timeout=10
+                            )
+                
+                    except Exception as e:
+                        sendTelegram(f"Camera error: {e}")
                     
                 elif data == "Taking a photo":
                     sendTelegram("Someone is standing at your door.")
